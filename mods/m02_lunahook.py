@@ -89,8 +89,6 @@ class simplehooks(Structure):
     _fields_ = [("hookcode", c_wchar * 500), ("text", c_void_p)]
 
 
-savehook_new_data = {}
-
 
 class texthook():
     def __init__(
@@ -124,7 +122,7 @@ class texthook():
         self.hwnd = hwnd
         self.runonce_line = ""
         self.autostarthookcode = [tuple(__) for __ in autostarthookcode]
-        self.isremoveuseless = savehook_new_data[self.pname]["removeuseless"] and len(
+        self.isremoveuseless = self.Cfg.savehook_new_data[self.pname]["removeuseless"] and len(
             self.autostarthookcode
         )
         self.needinserthookcode = needinserthookcode
@@ -213,7 +211,7 @@ class texthook():
     @threader
     def onprocconnect(self, pid):
         self.connectedpids.append(pid)
-        time.sleep(savehook_new_data[self.pname]["inserthooktimeout"] / 1000)
+        time.sleep(self.Cfg.savehook_new_data[self.pname]["inserthooktimeout"] / 1000)
         for hookcode in self.needinserthookcode:
             self.Luna_InsertHookCode(pid, hookcode)
         # self.showgamename()
@@ -260,7 +258,7 @@ class texthook():
                 self.Luna_cfree(message.stringptr)
 
     def newhookinsert(self, addr, hcode):
-        for _hc, _addr, _ctx1, _ctx2 in savehook_new_data[self.pname]["embedablehook"]:
+        for _hc, _addr, _ctx1, _ctx2 in self.Cfg.savehook_new_data[self.pname]["embedablehook"]:
             if hcode == _hc:
                 self.useembed(addr, _ctx1, _ctx2, True)
 
@@ -377,7 +375,7 @@ class texthook():
 
     def codepage(self):
         try:
-            cpi = savehook_new_data[self.pname]["codepage_index"]
+            cpi = self.Cfg.savehook_new_data[self.pname]["codepage_index"]
             cp = self.Cfg.static_data["codepage_real"][cpi]
         except:
             cp = 932
