@@ -3,6 +3,7 @@ import os
 import platform
 import tkinter
 from mods.m02_lunahook import texthook
+from mods.m05_attachprocess import getAttachProcess
 
 
 class Cfg:
@@ -35,10 +36,13 @@ class Cfg:
     static_data = {
         "codepage_real": [932, 65001, 936, 950, 949, 1258, 874, 1256, 1255, 1254, 1253, 1257, 1250, 1251, 1252, 437],
     }
+    selectedp = getAttachProcess()
 
 
 class Windows:
     label_hook_dll_path: tkinter.Label
+    button_AttachProcess: tkinter.Button
+    label_AttachProcessPID: tkinter.Label
     root = tkinter.Tk()
 
 
@@ -49,7 +53,10 @@ Windows.root.geometry('480x160+10+10')  # 290 160为窗口大小，+10 +10 定�
 
 # ===== 绘制窗口控件 =====
 Windows.label_hook_dll_path = tkinter.Label(Windows.root, text=f'Cfg.hook_dll_path: {Cfg.hook_dll_path}')
-Windows.label_hook_dll_path.grid(row=0, column=0)
+Windows.label_hook_dll_path.grid(row=0, sticky=tkinter.W)
 
+# ===== 选择进程 =====
+Windows.label_AttachProcessPID = tkinter.Label(Windows.root, text=f'进程号:  {Cfg.selectedp[0]}')
+Windows.label_AttachProcessPID.grid(row=1, sticky=tkinter.W)
 # ===== 进入消息循环 =====
 Windows.root.mainloop()
