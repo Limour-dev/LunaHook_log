@@ -6,6 +6,51 @@ from mods.m02_lunahook import texthook
 from mods.m05_attachprocess import getAttachProcess
 
 
+def getdefaultsavehook(gamepath, title=None):
+    default = {
+        "localeswitcher": 0,
+        "onloadautochangemode2": 0,
+        "onloadautoswitchsrclang": 0,
+        "needinserthookcode": [],
+        "embedablehook": [],
+        "imagepath": None,
+        "infopath": None,
+        "vid": 0,
+        "statistic_playtime": 0,
+        "statistic_wordcount": 0,
+        "statistic_wordcount_nodump": 0,
+        "leuse": True,
+        "startcmd": '"{exepath}"',
+        "startcmduse": False,
+        "hook": [],
+        "inserthooktimeout": 0,
+        "needinserthookcode": [],
+        "removeuseless": False,
+        "codepage_index": 0,
+        "allow_tts_auto_names": "",
+        "tts_repair": False,
+        "tts_repair_regex": [],
+        "hooktypeasname": {},
+        "use_saved_text_process": False,
+        "searchnoresulttime": 0,
+        "relationlinks": [],
+        "gamejsonfile": "",
+        "gamesqlitefile": "",
+        "gamexmlfile": "",
+    }
+    if gamepath == "0":
+        default["title"] = "No Game"
+    elif title and len(title):
+        default["title"] = title
+    else:
+        default["title"] = (
+                os.path.basename(os.path.dirname(gamepath))
+                + "/"
+                + os.path.basename(gamepath)
+        )
+    return default
+
+
 class Cfg:
     isbit64 = (platform.architecture()[0] == "64bit")
     hook_dll_root: str = r'D:\scn\LunaTranslator\Release_Chinese'
@@ -37,6 +82,7 @@ class Cfg:
         "codepage_real": [932, 65001, 936, 950, 949, 1258, 874, 1256, 1255, 1254, 1253, 1257, 1250, 1251, 1252, 437],
     }
     selectedp = getAttachProcess()
+    savehook_new_data = {selectedp[1]: getdefaultsavehook(selectedp[1])}
 
 
 class Windows:
@@ -58,5 +104,9 @@ Windows.label_hook_dll_path.grid(row=0, sticky=tkinter.W)
 # ===== 选择进程 =====
 Windows.label_AttachProcessPID = tkinter.Label(Windows.root, text=f'进程号:  {Cfg.selectedp[0]}')
 Windows.label_AttachProcessPID.grid(row=1, sticky=tkinter.W)
+
+# ===== 注入进程 =====
+
+hook = texthook(Cfg.selectedp[0], Cfg.selectedp[2], Cfg.selectedp[1], Cfg=Cfg)
 # ===== 进入消息循环 =====
 Windows.root.mainloop()
