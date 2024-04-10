@@ -83,8 +83,8 @@ class Cfg:
     static_data = {
         "codepage_real": [932, 65001, 936, 950, 949, 1258, 874, 1256, 1255, 1254, 1253, 1257, 1250, 1251, 1252, 437],
     }
-    selectedp = getAttachProcess()
-    savehook_new_data = {selectedp[1]: getdefaultsavehook(selectedp[1])}
+    selectedp: tuple
+    savehook_new_data: dict
     hook: texthook
 
 
@@ -108,21 +108,22 @@ Windows.root.geometry('480x160+10+10')  # 290 160为窗口大小，+10 +10 定�
 
 
 # ===== 选择进程 =====
-Windows.label_AttachProcessPID = tkinter.Label(Windows.root, text=f'进程号:  {Cfg.selectedp[0]}')
+Windows.label_AttachProcessPID = tkinter.Label(Windows.root, text=f'等待注入进程')
 Windows.label_AttachProcessPID.grid(row=0, column=1)
 
 Windows.ddb_AttachProcess_codepage = ttk.Combobox(Windows.root)
 Windows.ddb_AttachProcess_codepage['value'] = Cfg.static_data['codepage_real']
-Windows.ddb_AttachProcess_codepage.current(0)
+Windows.ddb_AttachProcess_codepage.current(2)
 Windows.ddb_AttachProcess_codepage.grid(row=0, column=0)
 
 
 # ===== 注入进程 =====
 def button_AttachProcess():
-    # Cfg.selectedp = getAttachProcess()
-    # Cfg.savehook_new_data = {Cfg.selectedp[1]: getdefaultsavehook(Cfg.selectedp[1])}
+    Cfg.selectedp = getAttachProcess(Windows.root)
+    Cfg.savehook_new_data = {Cfg.selectedp[1]: getdefaultsavehook(Cfg.selectedp[1])}
     print(Windows.ddb_AttachProcess_codepage.get(), type(Windows.ddb_AttachProcess_codepage.get()))
     Cfg.savehook_new_data[Cfg.selectedp[1]]['codepage'] = int(Windows.ddb_AttachProcess_codepage.get())
+    Windows.label_AttachProcessPID.config(text=f'进程号:  {Cfg.selectedp[0]}')
     Cfg.hook = texthook(Cfg.selectedp[0], Cfg.selectedp[2], Cfg.selectedp[1], Cfg=Cfg)
     print(Cfg.hook)
 

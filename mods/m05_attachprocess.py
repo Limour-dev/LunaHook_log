@@ -112,8 +112,11 @@ class AttachProcessDialog:
         self._callback(self.selectedp)
 
 
-def getAttachProcess():
-    root = tkinter.Tk()
+def getAttachProcess(_top=None):
+    if _top is None:
+        root = tkinter.Tk()
+    else:
+        root = tkinter.Toplevel(_top)
     # ===== 初始化窗口 =====
     root.title("LunaHook_log AttachProcessDialog " + "管理员" if windows.IsUserAnAdmin() else "非管理员")  # 窗口名
     root.geometry('480x100+10+10')  # 290 160为窗口大小，+10 +10 定义窗口弹出时的默认展示位置
@@ -139,7 +142,10 @@ def getAttachProcess():
     button = tkinter.Button(root, command=btn_01, text='点击此按钮后点击游戏窗口')
     button.grid(row=0, sticky=tkinter.W)
     # ===== 进入消息循环 =====
-    root.mainloop()
+    if _top is None:
+        root.mainloop()
+    else:
+        _top.wait_window(root)
     # ===== 返回选择的进程 =====
     return retn.selectedp
 
