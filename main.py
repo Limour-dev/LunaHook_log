@@ -90,6 +90,7 @@ class Cfg:
 
 class Windows:
     label_hook_dll_path: tkinter.Label
+    ddb_AttachProcess_codepage: ttk.Combobox
     button_AttachProcess: tkinter.Button
     label_AttachProcessPID: tkinter.Label
     button_findhook: tkinter.Button
@@ -110,11 +111,18 @@ Windows.root.geometry('480x160+10+10')  # 290 160为窗口大小，+10 +10 定�
 Windows.label_AttachProcessPID = tkinter.Label(Windows.root, text=f'进程号:  {Cfg.selectedp[0]}')
 Windows.label_AttachProcessPID.grid(row=0, column=1)
 
+Windows.ddb_AttachProcess_codepage = ttk.Combobox(Windows.root)
+Windows.ddb_AttachProcess_codepage['value'] = Cfg.static_data['codepage_real']
+Windows.ddb_AttachProcess_codepage.current(0)
+Windows.ddb_AttachProcess_codepage.grid(row=0, column=0)
+
 
 # ===== 注入进程 =====
 def button_AttachProcess():
     # Cfg.selectedp = getAttachProcess()
     # Cfg.savehook_new_data = {Cfg.selectedp[1]: getdefaultsavehook(Cfg.selectedp[1])}
+    print(Windows.ddb_AttachProcess_codepage.get(), type(Windows.ddb_AttachProcess_codepage.get()))
+    Cfg.savehook_new_data[Cfg.selectedp[1]]['codepage'] = int(Windows.ddb_AttachProcess_codepage.get())
     Cfg.hook = texthook(Cfg.selectedp[0], Cfg.selectedp[2], Cfg.selectedp[1], Cfg=Cfg)
     print(Cfg.hook)
 
@@ -126,7 +134,7 @@ Windows.button_AttachProcess.grid(row=0, column=2)
 # ===== 搜索钩子 =====
 def button_findhook():
     _usestruct = Cfg.hook.defaultsp()
-    _usestruct.codepage = 936
+    _usestruct.codepage = int(Windows.ddb_findhook_codepage.get())
     _usestruct.text = Windows.entry_findhook.get()
     print('搜索钩子', _usestruct.codepage, _usestruct.text)
     Cfg.hook.findhook(_usestruct)

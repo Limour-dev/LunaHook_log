@@ -375,8 +375,7 @@ class texthook():
 
     def codepage(self):
         try:
-            cpi = self.Cfg.savehook_new_data[self.pname]["codepage_index"]
-            cp = self.Cfg.static_data["codepage_real"][cpi]
+            cp = self.Cfg.savehook_new_data[self.pname]["codepage"]
         except:
             cp = 932
         return cp
