@@ -115,7 +115,7 @@ class AttachProcessDialog:
 def getAttachProcess():
     root = tkinter.Tk()
     # ===== 初始化窗口 =====
-    root.title("LunaHook_log AttachProcessDialog")  # 窗口名
+    root.title("LunaHook_log AttachProcessDialog " + "管理员" if windows.IsUserAnAdmin() else "非管理员")  # 窗口名
     root.geometry('480x100+10+10')  # 290 160为窗口大小，+10 +10 定义窗口弹出时的默认展示位置
     # ===== 展现获取的信息 =====
     t_pid = tkinter.Label(root, text='进程号: ')

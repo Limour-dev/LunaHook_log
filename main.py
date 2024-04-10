@@ -4,6 +4,7 @@ import platform
 import tkinter
 from mods.m02_lunahook import texthook
 from mods.m05_attachprocess import getAttachProcess
+import mods.m03_windows as windows
 
 
 def getdefaultsavehook(gamepath, title=None):
@@ -83,6 +84,7 @@ class Cfg:
     }
     selectedp = getAttachProcess()
     savehook_new_data = {selectedp[1]: getdefaultsavehook(selectedp[1])}
+    hook: texthook
 
 
 class Windows:
@@ -93,7 +95,7 @@ class Windows:
 
 
 # ===== 初始化窗口 =====
-Windows.root.title("LunaHook_log v0.1")  # 窗口名
+Windows.root.title("LunaHook_log v0.1 " + "管理员" if windows.IsUserAnAdmin() else "非管理员")  # 窗口名
 Windows.root.geometry('480x160+10+10')  # 290 160为窗口大小，+10 +10 定义窗口弹出时的默认展示位置
 # Windows.root.attributes("-alpha", 0.5)  # 设置窗口半透明
 
@@ -105,8 +107,14 @@ Windows.label_hook_dll_path.grid(row=0, sticky=tkinter.W)
 Windows.label_AttachProcessPID = tkinter.Label(Windows.root, text=f'进程号:  {Cfg.selectedp[0]}')
 Windows.label_AttachProcessPID.grid(row=1, sticky=tkinter.W)
 
-# ===== 注入进程 =====
 
-hook = texthook(Cfg.selectedp[0], Cfg.selectedp[2], Cfg.selectedp[1], Cfg=Cfg)
+# ===== 注入进程 =====
+def button_AttachProcess():
+    Cfg.hook = texthook(Cfg.selectedp[0], Cfg.selectedp[2], Cfg.selectedp[1], Cfg=Cfg)
+    print(Cfg.hook)
+
+
+Windows.button_AttachProcess = tkinter.Button(text='注入钩子', command=button_AttachProcess)
+Windows.button_AttachProcess.grid(row=1)
 # ===== 进入消息循环 =====
 Windows.root.mainloop()
