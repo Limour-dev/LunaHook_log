@@ -86,6 +86,12 @@ class Cfg:
     selectedp: tuple
     savehook_new_data: dict
     hook: texthook
+    callback_list = []
+
+    def callback(*args):
+        print('Cfg.callback', *args)
+        for cb in Cfg.callback_list:
+            cb(*args)
 
 
 class Windows:
@@ -98,6 +104,8 @@ class Windows:
     entry_findhook: tkinter.Entry
     button_inserthook: tkinter.Button
     entry_inserthook: tkinter.Entry
+    label_cb_n: tkinter.Label
+    label_cb_d: tkinter.Label
     root = tkinter.Tk()
 
 
@@ -164,5 +172,30 @@ Windows.button_inserthook.grid(row=2, column=2)
 # ===== 绘制窗口控件 =====
 Windows.label_hook_dll_path = tkinter.Label(Windows.root, text=f'Cfg.hook_dll_path: {Cfg.hook_dll_path}')
 Windows.label_hook_dll_path.grid(row=99, columnspan=4, sticky=tkinter.W)
+
+# ===== 捕获输出 =====
+Windows.label_cb_n = tkinter.Label(Windows.root, text=f'旁白')
+Windows.label_cb_n.grid(row=3, columnspan=4, sticky=tkinter.W)
+
+
+def cb_n(key, output: str):
+    if key[4] == 'EmbedMinori' and key[5].startswith('EXHSX0@66D6A'):
+        tmp = output.encode('gbk', errors='ignore').decode('shift-jis', errors='ignore')
+        Windows.label_cb_n.config(text=tmp)
+
+
+Cfg.callback_list.append(cb_n)
+
+Windows.label_cb_d = tkinter.Label(Windows.root, text=f'内容')
+Windows.label_cb_d.grid(row=4, columnspan=4, sticky=tkinter.W)
+
+
+def cb_d(key, output):
+    if key[4] == 'EmbedMinori' and key[5].startswith('EXHSX0@66D87'):
+        Windows.label_cb_d.config(text=output)
+
+
+Cfg.callback_list.append(cb_d)
+
 # ===== 进入消息循环 =====
 Windows.root.mainloop()

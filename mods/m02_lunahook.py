@@ -457,7 +457,7 @@ class texthook():
             _ = self.newline_delaywait.get()
             collector.append(_)
             time.sleep(self.Cfg.globalconfig["textthreaddelay"] / 1000)
-            while self.newline_delaywait.empty() == False:
+            while not self.newline_delaywait.empty():
                 collector.append(self.newline_delaywait.get())
             self.newline.put(collector)
             self.runonce_line = collector
@@ -492,7 +492,7 @@ class texthook():
             self.numcharactorcounter[key] -= len(_)
         self.hookdatacollecter[key].append(output)
         self.numcharactorcounter[key] += len(output)
-        print(key, output)
+        self.Cfg.callback(key, output)
 
         self.lock.release()
 
