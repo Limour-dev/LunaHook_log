@@ -401,7 +401,7 @@ class texthook():
         usestruct.maxRecords = 100000
         usestruct.codepage = self.codepage()
         usestruct.boundaryModule = os.path.basename(self.pname)
-        usestruct.jittype = 0
+        usestruct.jittype = 0  # ["PC", "YUZU", "PPSSPP", "VITA3K", "RPCS3"].index
         return usestruct
 
     @threader
