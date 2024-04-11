@@ -10,8 +10,11 @@ class CTkPrScrn:
         self.__start_x, self.__start_y, self.__end_x, self.__end_y, self.__scale = rectangle
         self.__init_x, self.__init_y = 0, 0
 
-    def setRectangle(self):
-        __win = tkinter.Tk()
+    def setRectangle(self, _top=None):
+        if _top is None:
+            __win = tkinter.Tk()
+        else:
+            __win = tkinter.Toplevel(_top)
         self.__win = __win  # 传递窗口对象
         __win.attributes("-alpha", 0.5)  # 设置窗口半透明
         __win.attributes("-fullscreen", True)  # 设置全屏
@@ -34,7 +37,10 @@ class CTkPrScrn:
         self.__scale = width / widthScale
         print('m01_prscrn setRectangle 创建遮罩', __width, __height, widthScale, heightScale, width, height,
               self.__scale)
-        __win.mainloop()  # 窗口持久化
+        if _top is None:
+            __win.mainloop()
+        else:
+            _top.wait_window(__win)
         return self.getRectangle()
 
     def _setRectangle(self, _e_x, _e_y):
