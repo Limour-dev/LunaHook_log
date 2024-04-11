@@ -4,9 +4,26 @@ import platform
 import tkinter as tk
 from tkinter import ttk
 import tkinter.filedialog as tkf
+from tkinter import messagebox
 from mods.m02_lunahook import texthook
 from mods.m05_attachprocess import getAttachProcess
 import mods.m03_windows as windows
+import json
+
+_cfg_json = {
+    'hook_dll_root': r'D:\scn\LunaTranslator\Release_Chinese',
+    'ddb_AttachProcess_codepage': 1,
+    'ddb_char': 0,
+    'ddb_content': 1,
+    'allHooks': {},
+    'ddb_char_k': 0,
+    'ddb_char_v': 0,
+    'ddb_content_k': 0,
+    'ddb_content_v': 1,
+}
+if os.path.exists('config.json'):
+    with open(r'config.json', 'r', encoding='utf-8') as f:
+        _cfg_json.update(json.load(f))
 
 
 def getdefaultsavehook(gamepath, title=None):
@@ -56,10 +73,8 @@ def getdefaultsavehook(gamepath, title=None):
 
 class Cfg:
     isbit64 = (platform.architecture()[0] == "64bit")
-    hook_dll_root: str = r'D:\scn\LunaTranslator\Release_Chinese'
-    hook_dll_root = os.path.abspath(hook_dll_root)
-    hook_dll_path = os.path.join(hook_dll_root,
-                                 ("LunaHost32.dll", "LunaHost64.dll")[isbit64])
+    hook_dll_root: str
+    hook_dll_path: str
     globalconfig = {
         "allow_set_text_name": False,
         "use_yapi": True,
@@ -99,7 +114,7 @@ class Cfg:
     savehook_new_data: dict
 
     hook: texthook = None
-    allHooks: dict
+    allHooks: dict = _cfg_json['allHooks']
 
     callback_list = []
 
@@ -109,31 +124,30 @@ class Cfg:
             cb(*args)
 
 
-def _updateDdbHooks(_ddb, _hooks):
+def _set_hook_dll_root(_askd_hook_dll_root):
+    _askd_hook_dll_root = os.path.abspath(_askd_hook_dll_root)
+    Cfg.hook_dll_root = _askd_hook_dll_root
+    Cfg.hook_dll_path = os.path.join(_askd_hook_dll_root,
+                                     ("LunaHost32.dll", "LunaHost64.dll")[Cfg.isbit64])
+    Windows.label_hook_dll_root.config(text=Cfg.hook_dll_path)
+
+
+def _updateDdbHooks(_ddb, _hooks, _current=0):
     _ddb['value'] = _hooks
     if not 0 <= _ddb.current() < len(_hooks):
-        _ddb.current(0)
+        _ddb.current(min(_current, len(_hooks) - 1))
 
 
 def updateAllHooks():
-    _tmp = Cfg.hook.hookdatacollecter
-    _hooks = {}
-    for key in _tmp.keys():
-        if key[4] not in _hooks:
-            _hooks[key[4]] = {key[5]}
-        else:
-            _hooks[key[4]].add(key[5])
-    print(_hooks)
-    Cfg.allHooks = _hooks
-    if _hooks:
-        _hooks = list(_hooks.keys())
-        _updateDdbHooks(Windows.ddb_char_k, _hooks)
-        _updateDdbHooks(Windows.ddb_content_k, _hooks)
+    if Cfg.allHooks:
+        _hooks = list(Cfg.allHooks.keys())
+        _updateDdbHooks(Windows.ddb_char_k, _hooks, _cfg_json['ddb_char_k'])
+        _updateDdbHooks(Windows.ddb_content_k, _hooks, _cfg_json['ddb_content_k'])
 
         _hooks = list(Cfg.allHooks[Windows.ddb_char_k.get()])
-        _updateDdbHooks(Windows.ddb_char_v, _hooks)
+        _updateDdbHooks(Windows.ddb_char_v, _hooks, _cfg_json['ddb_char_v'])
         _hooks = list(Cfg.allHooks[Windows.ddb_content_k.get()])
-        _updateDdbHooks(Windows.ddb_content_v, _hooks)
+        _updateDdbHooks(Windows.ddb_content_v, _hooks, _cfg_json['ddb_content_v'])
 
 
 class Windows:
@@ -173,8 +187,9 @@ Windows.root.geometry('640x320+10+10')  # axb为窗口大小，+10 +10 定义窗
 # Windows.root.attributes("-topmost", True)  # 设置窗口在最上层
 
 # ===== dll目录 =====
-Windows.label_hook_dll_root = tk.Label(Windows.root, text=Cfg.hook_dll_path)
+Windows.label_hook_dll_root = tk.Label(Windows.root)
 Windows.label_hook_dll_root.grid(row=99, column=1, columnspan=4)
+_set_hook_dll_root(_cfg_json['hook_dll_root'])
 
 
 def button_hook_dll_root():
@@ -184,11 +199,8 @@ def button_hook_dll_root():
     )
     if not _askd_hook_dll_root:
         return
-    _askd_hook_dll_root = os.path.abspath(_askd_hook_dll_root)
-    Cfg.hook_dll_root = _askd_hook_dll_root
-    Cfg.hook_dll_path = os.path.join(_askd_hook_dll_root,
-                                     ("LunaHost32.dll", "LunaHost64.dll")[Cfg.isbit64])
-    Windows.label_hook_dll_root.config(text=Cfg.hook_dll_path)
+    _cfg_json['hook_dll_root'] = _askd_hook_dll_root
+    _set_hook_dll_root(_askd_hook_dll_root)
 
 
 Windows.button_hook_dll_root = tk.Button(
@@ -209,7 +221,7 @@ def ddb_encoding_list(_current=0):
     return _ddb
 
 
-Windows.ddb_AttachProcess_codepage = ddb_encoding_list(1)
+Windows.ddb_AttachProcess_codepage = ddb_encoding_list(_cfg_json['ddb_AttachProcess_codepage'])
 Windows.ddb_AttachProcess_codepage.grid(row=0, column=0)
 
 
@@ -260,7 +272,7 @@ Windows.button_inserthook = tk.Button(Windows.root, text='注入钩子', command
 Windows.button_inserthook.grid(row=2, column=2)
 
 # ===== 人物 =====
-Windows.ddb_char = ddb_encoding_list(0)
+Windows.ddb_char = ddb_encoding_list(_cfg_json['ddb_char'])
 Windows.ddb_char.grid(row=3, column=0)
 
 Windows.ddb_char_k = ttk.Combobox()
@@ -288,7 +300,7 @@ def check_digit(content):
 
 
 # ===== 内容 =====
-Windows.ddb_content = ddb_encoding_list(1)
+Windows.ddb_content = ddb_encoding_list(_cfg_json['ddb_content'])
 Windows.ddb_content.grid(row=4, column=0)
 
 Windows.ddb_content_k = ttk.Combobox()
@@ -308,6 +320,15 @@ Windows.ddb_content_k.bind('<<ComboboxSelected>>', ddb_content_v_update)
 
 
 def button_content():
+    _tmp = Cfg.hook.hookdatacollecter
+    _hooks = {}
+    for key in _tmp.keys():
+        if key[4] not in _hooks:
+            _hooks[key[4]] = {key[5]}
+        else:
+            _hooks[key[4]].add(key[5])
+    print(_hooks)
+    Cfg.allHooks = _hooks
     updateAllHooks()
 
 
@@ -364,6 +385,29 @@ def clock_loop():
     Windows.root.after(500, clock_loop)
 
 
-Windows.root.after(500, clock_loop)
+if not Cfg.allHooks:
+    Windows.root.after(500, clock_loop)
+else:
+    updateAllHooks()
+
+
 # ===== 进入消息循环 =====
+def on_closing():
+    if messagebox.askokcancel("保存", "保存当前状态?"):
+        _cfg_json['ddb_AttachProcess_codepage'] = Windows.ddb_AttachProcess_codepage.current()
+        _cfg_json['ddb_char'] = Windows.ddb_char.current()
+        _cfg_json['ddb_content'] = Windows.ddb_content.current()
+        _cfg_json['allHooks'] = {k: list(v) for k, v in Cfg.allHooks.items()}
+        _cfg_json['ddb_char_k'] = Windows.ddb_char_k.current()
+        _cfg_json['ddb_char_v'] = Windows.ddb_char_v.current()
+        _cfg_json['ddb_content_k'] = Windows.ddb_content_k.current()
+        _cfg_json['ddb_content_v'] = Windows.ddb_content_v.current()
+        # ===== 持久化设置 =====
+        with open(r'config.json', 'w', encoding='utf-8') as f:
+            json.dump(_cfg_json, f, ensure_ascii=False, indent=4)
+
+    Windows.root.destroy()
+
+
+Windows.root.protocol("WM_DELETE_WINDOW", on_closing)
 Windows.root.mainloop()
