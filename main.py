@@ -97,13 +97,43 @@ class Cfg:
     }
     selectedp: tuple
     savehook_new_data: dict
-    hook: texthook
+
+    hook: texthook = None
+    allHooks: dict
+
     callback_list = []
 
     def callback(*args):
         print('Cfg.callback', *args)
         for cb in Cfg.callback_list:
             cb(*args)
+
+
+def _updateDdbHooks(_ddb, _hooks):
+    _ddb['value'] = _hooks
+    if not 0 <= _ddb.current() < len(_hooks):
+        _ddb.current(0)
+
+
+def updateAllHooks():
+    _tmp = Cfg.hook.hookdatacollecter
+    _hooks = {}
+    for key in _tmp.keys():
+        if key[4] not in _hooks:
+            _hooks[key[4]] = {key[5]}
+        else:
+            _hooks[key[4]].add(key[5])
+    print(_hooks)
+    Cfg.allHooks = _hooks
+    if _hooks:
+        _hooks = list(_hooks.keys())
+        _updateDdbHooks(Windows.ddb_char_k, _hooks)
+        _updateDdbHooks(Windows.ddb_content_k, _hooks)
+
+        _hooks = list(Cfg.allHooks[Windows.ddb_char_k.get()])
+        _updateDdbHooks(Windows.ddb_char_v, _hooks)
+        _hooks = list(Cfg.allHooks[Windows.ddb_content_k.get()])
+        _updateDdbHooks(Windows.ddb_content_v, _hooks)
 
 
 class Windows:
@@ -121,16 +151,25 @@ class Windows:
     # ===== 注入钩子 =====
     button_inserthook: tk.Button
     entry_inserthook: tk.Entry
+    # ===== 人物 =====
+    ddb_char: ttk.Combobox
+    ddb_char_k: ttk.Combobox
+    ddb_char_v: ttk.Combobox
+    # ===== 内容 =====
+    ddb_content: ttk.Combobox
+    ddb_content_k: ttk.Combobox
+    ddb_content_v: ttk.Combobox
+    button_content: tk.Button
     # ===== 捕获输出 =====
     label_cb_n: tk.Label
     label_cb_d: tk.Label
-    
+
     root = tk.Tk()
 
 
 # ===== 初始化窗口 =====
 Windows.root.title("LunaHook_log v0.1 " + "管理员" if windows.IsUserAnAdmin() else "非管理员")  # 窗口名
-Windows.root.geometry('640x180+10+10')  # 290 160为窗口大小，+10 +10 定义窗口弹出时的默认展示位置
+Windows.root.geometry('640x320+10+10')  # axb为窗口大小，+10 +10 定义窗口弹出时的默认展示位置
 # Windows.root.attributes("-topmost", True)  # 设置窗口在最上层
 
 # ===== dll目录 =====
@@ -162,9 +201,15 @@ Windows.button_hook_dll_root.grid(row=99, column=0)
 Windows.label_AttachProcessPID = tk.Label(Windows.root, text=f'等待注入进程')
 Windows.label_AttachProcessPID.grid(row=0, column=1)
 
-Windows.ddb_AttachProcess_codepage = ttk.Combobox(Windows.root)
-Windows.ddb_AttachProcess_codepage['value'] = Cfg.encoding_list
-Windows.ddb_AttachProcess_codepage.current(1)
+
+def ddb_encoding_list(_current=0):
+    _ddb = ttk.Combobox(Windows.root)
+    _ddb['value'] = Cfg.encoding_list
+    _ddb.current(_current)
+    return _ddb
+
+
+Windows.ddb_AttachProcess_codepage = ddb_encoding_list(1)
 Windows.ddb_AttachProcess_codepage.grid(row=0, column=0)
 
 
@@ -214,34 +259,111 @@ Windows.entry_inserthook.grid(row=2, column=1)
 Windows.button_inserthook = tk.Button(Windows.root, text='注入钩子', command=button_inserthook)
 Windows.button_inserthook.grid(row=2, column=2)
 
+# ===== 人物 =====
+Windows.ddb_char = ddb_encoding_list(0)
+Windows.ddb_char.grid(row=3, column=0)
+
+Windows.ddb_char_k = ttk.Combobox()
+Windows.ddb_char_k.grid(row=3, column=1)
+
+Windows.ddb_char_v = ttk.Combobox()
+Windows.ddb_char_v.grid(row=3, column=2)
+
+
+@Windows.root.register
+def ddb_char_v_update():
+    _hooks = list(Cfg.allHooks[Windows.ddb_char_k.get()])
+    _updateDdbHooks(Windows.ddb_char_v, _hooks)
+
+
+Windows.ddb_char_k.bind('<<ComboboxSelected>>', ddb_char_v_update)
+
+
+@Windows.root.register
+def check_digit(content):
+    if content.isdigit() or content == "":
+        return True
+    else:
+        return False
+
+
+# ===== 内容 =====
+Windows.ddb_content = ddb_encoding_list(1)
+Windows.ddb_content.grid(row=4, column=0)
+
+Windows.ddb_content_k = ttk.Combobox()
+Windows.ddb_content_k.grid(row=4, column=1)
+
+Windows.ddb_content_v = ttk.Combobox()
+Windows.ddb_content_v.grid(row=4, column=2)
+
+
+@Windows.root.register
+def ddb_content_v_update():
+    _hooks = list(Cfg.allHooks[Windows.ddb_content_k.get()])
+    _updateDdbHooks(Windows.ddb_content_v, _hooks)
+
+
+Windows.ddb_content_k.bind('<<ComboboxSelected>>', ddb_content_v_update)
+
+
+def button_content():
+    updateAllHooks()
+
+
+Windows.button_content = tk.Button(
+    Windows.root,
+    text='更新钩子列表',
+    command=button_content
+)
+Windows.button_content.grid(row=4, column=3)
+
 # ===== 捕获输出 =====
 Windows.label_cb_n = tk.Label(Windows.root, text=f'旁白')
-Windows.label_cb_n.grid(row=3, columnspan=4, sticky=tk.W)
+Windows.label_cb_n.grid(row=97, columnspan=4, sticky=tk.W)
 
 
 def cb_n(key, output: str):
-    if key[4] == 'EmbedMinori' and key[5].startswith('EXHSX0@66D6A'):
-        tmp = output.encode(
-            Windows.ddb_AttachProcess_codepage.get(), errors='ignore'
-        ).decode('shift-jis', errors='ignore')
+    if key[4] == Windows.ddb_char_k.get() and key[5] == Windows.ddb_char_v.get():
+        if Windows.ddb_AttachProcess_codepage.get() != Windows.ddb_char.get():
+            tmp = output.encode(
+                Windows.ddb_AttachProcess_codepage.get(), errors='ignore'
+            ).decode(Windows.ddb_char.get(), errors='ignore')
+        else:
+            tmp = output
         Windows.label_cb_n.config(text=tmp)
 
 
 Cfg.callback_list.append(cb_n)
 
 Windows.label_cb_d = tk.Label(Windows.root, text=f'内容')
-Windows.label_cb_d.grid(row=4, columnspan=4, sticky=tk.W)
+Windows.label_cb_d.grid(row=98, columnspan=4, sticky=tk.W)
 
 
 def cb_d(key, output):
-    if key[4] == 'EmbedMinori' and key[5].startswith('EXHSX0@66D87'):
-        tmp = output.encode(
-            Windows.ddb_AttachProcess_codepage.get(), errors='ignore'
-        ).decode('gbk', errors='ignore')
+    if key[4] == Windows.ddb_content_k.get() and key[5] == Windows.ddb_content_v.get():
+        if Windows.ddb_AttachProcess_codepage.get() != Windows.ddb_content.get():
+            tmp = output.encode(
+                Windows.ddb_AttachProcess_codepage.get(), errors='ignore'
+            ).decode(Windows.ddb_content.get(), errors='ignore')
+        else:
+            tmp = output
         Windows.label_cb_d.config(text=tmp)
 
 
 Cfg.callback_list.append(cb_d)
 
+
+# ===== 时钟循环 =====
+def clock_loop():
+    if Cfg.hook is not None:
+        _tmp = Cfg.hook.hookdatacollecter
+        if _tmp:
+            button_content()
+            return
+    Windows.root.after(500, clock_loop)
+
+
+Windows.root.after(500, clock_loop)
 # ===== 进入消息循环 =====
 Windows.root.mainloop()
