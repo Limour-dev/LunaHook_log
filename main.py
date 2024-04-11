@@ -1,13 +1,16 @@
 # mamba create -n LunaHook_log python=3.10 pillow -c conda-forge
+# pip install OpenCC -i https://pypi.tuna.tsinghua.edu.cn/simple some-package
 import os
 import platform
 import tkinter as tk
+from io import TextIOWrapper
 from tkinter import ttk
 import tkinter.filedialog as tkf
 from tkinter import messagebox
 from mods.m02_lunahook import texthook
 from mods.m05_attachprocess import getAttachProcess
 import mods.m03_windows as windows
+from mods.m06_clearT import clearT
 import json
 
 _cfg_json = {
@@ -20,6 +23,7 @@ _cfg_json = {
     'ddb_char_v': 0,
     'ddb_content_k': 0,
     'ddb_content_v': 1,
+    'label_log': r'D:\datasets\tmp\1.txt'
 }
 if os.path.exists('config.json'):
     with open(r'config.json', 'r', encoding='utf-8') as f:
@@ -123,6 +127,13 @@ class Cfg:
         for cb in Cfg.callback_list:
             cb(*args)
 
+    log = False
+    log_file: TextIOWrapper
+    log_add_size: int = 0
+
+    var_n: str = '旁白'
+    var_d: str = ''
+
 
 def _set_hook_dll_root(_askd_hook_dll_root):
     _askd_hook_dll_root = os.path.abspath(_askd_hook_dll_root)
@@ -177,6 +188,10 @@ class Windows:
     # ===== 捕获输出 =====
     label_cb_n: tk.Label
     label_cb_d: tk.Label
+    # ===== 日志记录 =====
+    label_log: tk.Label
+    button_log: tk.Button
+    button_log_control: tk.Button
 
     root = tk.Tk()
 
@@ -209,6 +224,57 @@ Windows.button_hook_dll_root = tk.Button(
     command=button_hook_dll_root
 )
 Windows.button_hook_dll_root.grid(row=99, column=0)
+
+# ===== 日志记录 =====
+Windows.label_log = tk.Label(Windows.root, text=_cfg_json['label_log'])
+Windows.label_log.grid(row=100, column=1, columnspan=4)
+
+
+def button_log():
+    _dir, _file = os.path.split(_cfg_json['label_log'])
+    _askd_path = tkf.asksaveasfilename(
+        title='Log 路径',
+        initialdir=_dir,
+        initialfile=_file
+    )
+    if not _askd_path:
+        return
+    _cfg_json['label_log'] = os.path.abspath(_askd_path)
+    Windows.label_log.config(text=_cfg_json['label_log'])
+
+
+Windows.button_log = tk.Button(
+    Windows.root,
+    text='选择 Log 路径',
+    command=button_log
+)
+Windows.button_log.grid(row=100, column=0)
+
+
+def button_log_control():
+    if not Cfg.log:
+        Windows.button_log_control.config(text='暂停记录')
+        Cfg.log_file = open(_cfg_json['label_log'], 'a', encoding='utf-8')
+    else:
+        Windows.button_log_control.config(text='继续记录')
+        Cfg.log_file.close()
+    Cfg.log = not Cfg.log
+
+
+Windows.button_log_control = tk.Button(
+    Windows.root,
+    text='开始记录',
+    command=button_log_control
+)
+Windows.button_log_control.grid(row=101, column=5)
+
+
+def log_process():
+    if (not Cfg.log) or not Cfg.var_d:
+        return
+    Cfg.log_add_size += Cfg.log_file.write(clearT(Cfg.var_n) + '：' + clearT(Cfg.var_d) + '\n')
+
+
 # ===== 选择进程 =====
 Windows.label_AttachProcessPID = tk.Label(Windows.root, text=f'等待注入进程')
 Windows.label_AttachProcessPID.grid(row=0, column=1)
@@ -344,6 +410,10 @@ Windows.label_cb_n = tk.Label(Windows.root, text=f'旁白')
 Windows.label_cb_n.grid(row=97, columnspan=4, sticky=tk.W)
 
 
+def _cb_n():
+    Windows.label_cb_n.config(text=Cfg.var_n)
+
+
 def cb_n(key, output: str):
     if key[4] == Windows.ddb_char_k.get() and key[5] == Windows.ddb_char_v.get():
         if Windows.ddb_AttachProcess_codepage.get() != Windows.ddb_char.get():
@@ -352,13 +422,21 @@ def cb_n(key, output: str):
             ).decode(Windows.ddb_char.get(), errors='ignore')
         else:
             tmp = output
-        Windows.label_cb_n.config(text=tmp)
+        if not tmp:
+            tmp = '旁白'
+        if Cfg.var_n != tmp:
+            Cfg.var_n = tmp
+            Windows.root.after(1, _cb_n)
 
 
 Cfg.callback_list.append(cb_n)
 
 Windows.label_cb_d = tk.Label(Windows.root, text=f'内容')
 Windows.label_cb_d.grid(row=98, columnspan=4, sticky=tk.W)
+
+
+def _cb_d():
+    Windows.label_cb_d.config(text=Cfg.var_d)
 
 
 def cb_d(key, output):
@@ -369,7 +447,10 @@ def cb_d(key, output):
             ).decode(Windows.ddb_content.get(), errors='ignore')
         else:
             tmp = output
-        Windows.label_cb_d.config(text=tmp)
+        if Cfg.var_d != tmp:
+            Cfg.var_d = tmp
+            Windows.root.after(10, log_process)
+            Windows.root.after(20, _cb_d)
 
 
 Cfg.callback_list.append(cb_d)
@@ -391,8 +472,24 @@ else:
     updateAllHooks()
 
 
+def log_flush():
+    try:
+        if (not Cfg.log) or not Cfg.var_d:
+            return
+        if Cfg.log_add_size > 0:
+            Cfg.log_file.flush()
+            Cfg.log_add_size = 0
+    finally:
+        Windows.root.after(2000, log_flush)
+
+
+Windows.root.after(2000, log_flush)
+
+
 # ===== 进入消息循环 =====
 def on_closing():
+    if Cfg.log:
+        button_log()
     if messagebox.askokcancel("保存", "保存当前状态?"):
         _cfg_json['ddb_AttachProcess_codepage'] = Windows.ddb_AttachProcess_codepage.current()
         _cfg_json['ddb_char'] = Windows.ddb_char.current()
