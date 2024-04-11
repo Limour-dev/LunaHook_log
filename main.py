@@ -273,6 +273,7 @@ def log_process():
     if (not Cfg.log) or not Cfg.var_d:
         return
     Cfg.log_add_size += Cfg.log_file.write(clearT(Cfg.var_n) + '：' + clearT(Cfg.var_d) + '\n')
+    Cfg.var_n = '旁白'  # 清空名字
 
 
 # ===== 选择进程 =====
@@ -406,7 +407,7 @@ Windows.button_content = tk.Button(
 Windows.button_content.grid(row=4, column=3)
 
 # ===== 捕获输出 =====
-Windows.label_cb_n = tk.Label(Windows.root, text=f'旁白')
+Windows.label_cb_n = tk.Label(Windows.root, text='旁白')
 Windows.label_cb_n.grid(row=97, columnspan=4, sticky=tk.W)
 
 
