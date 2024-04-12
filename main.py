@@ -95,7 +95,7 @@ class Cfg:
             "keeprawtext": False,
         },
         "autorun": True,
-        "textthreaddelay": 500,
+        "textthreaddelay": 100,
         "direct_filterrepeat": False,
         "flushbuffersize": 3000,
         "filter_chaos_code": False,
