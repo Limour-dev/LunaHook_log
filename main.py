@@ -192,6 +192,9 @@ class Windows:
     label_log: tk.Label
     button_log: tk.Button
     button_log_control: tk.Button
+    # ===== 人名后处理 =====
+    button_char_find: tk.Button
+    button_char_map: tk.Button
 
     root = tk.Tk()
 
@@ -406,6 +409,78 @@ Windows.button_content = tk.Button(
 )
 Windows.button_content.grid(row=4, column=3)
 
+
+# ===== 人名后处理 =====
+def get_all_files_in_directory(directory, ext=''):
+    import os
+    import re
+    custom_sort_key_re = re.compile('([0-9]+)')
+
+    def custom_sort_key(s):
+        # 将字符串中的数字部分转换为整数，然后进行排序
+        return [int(x) if x.isdigit() else x for x in custom_sort_key_re.split(s)]
+
+    all_files = []
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if file.endswith(ext):
+                file_path = os.path.join(root, file)
+                all_files.append(file_path)
+    return sorted(all_files, key=custom_sort_key)
+
+
+def button_char_find():
+    _dir, _file = os.path.split(_cfg_json['label_log'])
+    _a = get_all_files_in_directory(_dir)
+    _n = {}
+    for _path in _a:
+        with open(_path, 'r', encoding='utf-8') as _f:
+            for _line in _f:
+                if '：' in _line:
+                    _idx = _line.index('：')
+                    n = _line[:_idx]
+                    if n in _n:
+                        pass
+                    else:
+                        _n[n] = n
+                        print(_line)
+    with open('name_map.json', 'w', encoding='utf-8') as _f:
+        json.dump(_n, _f, ensure_ascii=False, indent=4)
+
+
+Windows.button_char_find = tk.Button(
+    Windows.root,
+    text='生成人名映射表',
+    command=button_char_find
+)
+Windows.button_char_find.grid(row=101, column=1)
+
+
+def button_char_map():
+    _dir, _file = os.path.split(_cfg_json['label_log'])
+    _a = get_all_files_in_directory(_dir)
+    with open('name_map.json', 'r', encoding='utf-8') as _f:
+        _n:dict = json.load(_f)
+    for _path in _a:
+        with open(_path, 'r', encoding='utf-8') as _f:
+            _lines = _f.readlines()
+        with open(_path + '.map.txt', 'w', encoding='utf-8') as _f:
+            for _line in _lines:
+                if '：' in _line:
+                    _idx = _line.index('：')
+                    n = _line[:_idx]
+                    n = _n.get(n, n)
+                    _f.write(n + '：' + _line[_idx+1:])
+                else:
+                    _f.write(_line)
+
+
+Windows.button_char_map = tk.Button(
+    Windows.root,
+    text='应用人名映射表',
+    command=button_char_map
+)
+Windows.button_char_map.grid(row=101, column=2)
 # ===== 捕获输出 =====
 Windows.label_cb_n = tk.Label(Windows.root, text='旁白')
 Windows.label_cb_n.grid(row=97, columnspan=4, sticky=tk.W)
