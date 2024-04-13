@@ -38,3 +38,5 @@
 ### 第六步 关闭记录器
 + 关闭记录器时会询问是否保存当前界面的配置
 + 如果保存后想重置，删除目录中的 `config.json` 即可
+## 翻译
++ https://github.com/Limour-dev/SakuraTrans
