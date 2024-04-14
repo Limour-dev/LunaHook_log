@@ -487,7 +487,7 @@ Windows.label_cb_n.grid(row=97, columnspan=4, sticky=tk.W)
 
 
 def _cb_n():
-    Windows.label_cb_n.config(text=Cfg.var_n)
+    Windows.label_cb_n.config(text=Cfg.var_n[:10])
 
 
 def cb_n(key, output: str):
@@ -512,7 +512,7 @@ Windows.label_cb_d.grid(row=98, columnspan=4, sticky=tk.W)
 
 
 def _cb_d():
-    Windows.label_cb_d.config(text=Cfg.var_d)
+    Windows.label_cb_d.config(text=Cfg.var_d[:20])
 
 
 def cb_d(key, output):

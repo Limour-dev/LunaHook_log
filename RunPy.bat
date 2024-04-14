@@ -11,4 +11,5 @@ if "%~1"=="" (
 	start "LunaHook" C:\Users\11248\miniconda3\envs\LunaHook_log\python.exe %1\main.py
 )
 :: 等待用户按任意键继续
-pause
+:: pause
+exit
