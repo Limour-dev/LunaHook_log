@@ -1,3 +1,5 @@
+# 废弃
+转到 https://github.com/Limour-dev/LunaHook_Hook
 # LunaHook_log
 + Galgame游玩记录器，记录与纸片人的一点一滴
 
